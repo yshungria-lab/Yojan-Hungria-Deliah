@@ -1,0 +1,849 @@
+openapi: 3.0.3
+info:
+  title: Delilah Restó
+  description: API para pedido de comidas, cuenta con la posibilidad de registrar nuevos usuarios, validar usuarios y realizar diferentes acciones tanto como usuario o administrador.
+  version: 1.0.0
+tags:
+  - name: Usuarios
+    description: Operaciones de usuarios
+  - name: Productos
+    description: Operaciones para productos
+  - name: Pedidos
+    description: Operaciones para pedidos
+servers:
+  - url: http://localhost:3000
+paths:
+  /users:
+    post:
+      tags:
+        - Usuarios
+      summary: Crear usuario  
+      description: Puede ser realizada si el usuario no existe.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/userInputs'
+      responses:
+        201:
+          description: Nuevo usuario creado
+        409:
+          description: Usuario ya existe
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener lista de usuarios  
+      description: Solo puede ser realizada por el administrador.
+      parameters: 
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: fullname
+          in: query
+          description: Se puede utilizar como filtro de búsqueda por nombre
+          schema:
+            type: string
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/user"
+        401:
+          description: Sin autorización    
+        403:
+          description: Sin permiso
+        404:
+          description: Usuario no encontrado  
+  '/users/login':
+    get:
+      tags: 
+        - Usuarios
+      summary: Ingreso de usuario  
+      parameters:
+        - name: username
+          in: query
+          description: nombre de usuario 
+          required: true
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: email del usuario 
+          required: true
+          schema:
+            type: string  
+        - name: password
+          in: query
+          description: contraseña del usuario 
+          required: true
+          schema:
+            type: string    
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              example: {
+                token: "string"
+              }
+        401:
+          description: Usuario/contraseña incorrecto
+  '/users/{userId}':
+    get:
+      tags: 
+        - Usuarios
+      summary: Obtener usuario por ID
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: ID del usuario 
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/user"
+        401:
+          description: Sin autorización    
+        403:
+          description: Sin permiso
+        404:
+          description: Usuario no encontrado
+    put:
+      tags: 
+        - Usuarios
+      summary: Actualizar usuario por ID
+      description: Solo puede ser realizado por el usuario.
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: ID del usuario 
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/userInputs'  
+      responses:
+        200:
+          description: Actualización exitosa
+        401:
+          description: Sin autorización  
+        403:
+          description: Sin permiso
+    delete:
+      tags: 
+        - Usuarios
+      summary: Eliminar usuario por ID
+      description: Puede ser realizado por el usuario o administrador.
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: ID del usuario 
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Usuario eliminado
+        401:
+          description: Sin autorización 
+        403:
+          description: Sin permiso
+        404:
+          description: Usuario no encontrado  
+    patch:
+      tags: 
+        - Usuarios
+      summary: Dar permisos de administrador
+      description: Administrador puede dar permisos de administrador a un usuario.
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: ID del usuario
+          required: true
+          schema:
+            type: integer
+        - name: admin
+          in: query
+          description: Permisos de administrador
+          required: true
+          schema:
+            type: boolean
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+        401:
+          description: Sin autorización
+        403:
+          description: Sin permiso
+        404:
+          description: Usuario no encontrado  
+  '/users/{userId}/favorites':
+    get:
+      tags: 
+        - Usuarios
+      summary: Obtener productos favoritos
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: ID del usuario 
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/productFav"
+        401:
+          description: Sin autorización    
+        403:
+          description: Sin permiso 
+        404:
+          description: No se encontraron resultados  
+  /products:
+    post:
+      tags:
+        - Productos
+      summary: Crear producto
+      description: Solo puede ser realizada por el administrador.
+      parameters: 
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+      security:
+        - autenticacionJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/productInputs'
+      responses:
+        201:
+          description: Nuevo producto creado
+        409:
+          description: El producto ya existe  
+        401:
+          description: Sin autorización 
+        403:
+          description: Sin permiso  
+    get:
+      tags:
+        - Productos
+      summary: Obtener lista de productos
+      parameters: 
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Se puede utilizar como filtro de búsqueda por nombre
+          schema:
+            type: string
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/product"
+        401:
+          description: Sin autorización    
+        404:
+          description: Producto no encontrado 
+  '/products/{productId}':  
+    get:
+      tags: 
+        - Productos
+      summary: Obtener producto por ID
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: productId
+          in: path
+          description: ID del producto 
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/product"  
+        401:
+          description: Sin autorización           
+        404:
+          description: Producto no encontrado
+    put:
+      tags: 
+        - Productos
+      summary: Actualizar producto por ID
+      description: Solo puede ser realizado por el administrador.
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: productId
+          in: path
+          description: ID del producto 
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/productInputs'  
+      responses:
+        200:
+          description: Actualización exitosa
+        401:
+          description: Sin autorización  
+        403:
+          description: Sin permiso  
+        404:
+          description: Producto no encontrado  
+    delete:
+      tags: 
+        - Productos
+      summary: Eliminar producto por ID
+      description: Solo puede ser realizado por el administrador.
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: productId
+          in: path
+          description: ID del producto
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Producto eliminado
+        401:
+          description: Sin autorización 
+        403:
+          description: Sin permiso   
+        404:
+          description: Producto no encontrado  
+    post:
+      tags: 
+        - Productos
+      summary: Añadir producto a favoritos
+      description: Usuario puede añadir un producto por ID a su lista de favoritos.
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: productId
+          in: path
+          description: ID del producto 
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        201:
+          description: Producto añadido
+        401:
+          description: Sin autorización 
+        404:
+          description: Producto no encontrado     
+  /orders:
+    post:
+      tags:
+        - Pedidos
+      summary: Crear pedido  
+      description: El usuario pude generar un nuevo pedido con un listado de productos
+      parameters: 
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+      security: 
+        - autenticacionJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/orderInputs'     
+      responses:
+        201:
+          description: Pedido creado
+        401:
+          description: Sin autorización 
+    get:
+      tags:
+        - Pedidos
+      summary: Obtener lista de pedidos 
+      description: Solo puede ser realizada por el administrador.
+      parameters: 
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: query
+          description: Se puede utilizar como filtro de búsqueda por id de usuario
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/order"
+        401:
+          description: Sin autorización    
+        403:
+          description: Sin permiso
+        404: 
+          description: No se encontraron resultados  
+  '/orders/{orderId}':
+    get:
+      tags: 
+        - Pedidos
+      summary: Obtener pedido por ID
+      description: Solo puede ser realizado por el usuario del pedido o administrador
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          description: ID del pedido
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Operación exitosa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/orderCont"
+        401:
+          description: Sin autorización 
+        403:
+          description: Sin permiso
+        404: 
+          description: Pedido no encontrado  
+    patch:
+      tags: 
+        - Pedidos
+      summary: Actualizar estado del pedido
+      description: Solo puede ser realizado por el administrador
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          description: ID del pedido
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: estado del pedido
+          required: true
+          schema:
+            type: string    
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Actualización exitosa
+        401:
+          description: Sin autorización  
+        403:
+          description: Sin permiso  
+        404: 
+          description: Pedido no encontrado  
+    delete:
+      tags: 
+        - Pedidos
+      summary: Eliminar pedido
+      description: Solo puede ser realizado por el usuario del pedido
+      parameters:
+        - name: Authorization bearer
+          in: header
+          description: token
+          required: true
+          schema:
+            type: string
+        - name: orderId
+          in: path
+          description: ID del pedido
+          required: true
+          schema:
+            type: integer
+      security:
+        - autenticacionJWT: []
+      responses:
+        200:
+          description: Pedido eliminado
+        401:
+          description: Sin autorización 
+        400:
+          description: No se puede eliminar
+        403:
+          description: Sin permiso  
+        404: 
+          description: Pedido no encontrado  
+components:
+  securitySchemes:
+    autenticacionJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    userInputs:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "string"
+        fullname:
+          type: string
+          example: "string"
+        email:
+          type: string
+          example: "string"
+        phone:
+          type: string
+          example: "string"
+        address:
+          type: string
+          example: "string"
+        password:
+          type: string
+          example: "string"
+    user:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: "string"
+        fullname:
+          type: string
+          example: "string"
+        email:
+          type: string
+          example: "string"
+        phone:
+          type: string
+          example: "string"
+        address:
+          type: string
+          example: "string"
+        password:
+          type: string
+          example: "string"
+        admin:
+          type: boolean
+          example: 0
+        created:
+          type: string
+          format: date-time
+          example: "2019-04-20T14:47:42.506Z"
+        updated:
+          type: string
+          format: date-time  
+          example: "2019-04-20T14:47:42.506Z"
+    product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "string"
+        description:
+          type: string
+          example: "string"  
+        price:
+          type: number
+          format: double
+          example: 0.50
+        image:
+          type: string
+          example: "string"
+        stock:
+          type: integer
+          example: 1
+        created:
+          type: string
+          format: date-time
+          example: "2019-04-20T14:47:42.506Z"
+        updated:
+          type: string
+          format: date-time  
+          example: "2019-04-20T14:47:42.506Z"
+    productFav:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "string"
+        description:
+          type: string
+          example: "string"  
+        price:
+          type: number
+          format: double
+          example: 0.00
+    productInputs:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "string"
+        description:
+          type: string
+          example: "string"  
+        price:
+          type: number
+          format: double
+          example: 50.80
+        image:
+          type: string
+          example: "string"
+        stock:
+          type: integer
+          example: 99
+    order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        total:
+          type: number
+          format: double
+          example: 0.00
+        payment:
+          type: string
+          enum: 
+            - cash
+            - credit card
+        status:
+          type: string
+          enum:
+            - new
+            - confirmed
+            - in process
+            - on way
+            - delivered
+        created:
+          type: string
+          format: date-time
+          example: "2019-04-20T14:47:42.506Z"
+        updated:
+          type: string
+          format: date-time  
+          example: "2019-04-20T14:47:42.506Z"   
+    orderCont:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            user_id:
+              type: integer
+              example: 1
+            total:
+              type: number
+              format: double
+              example: 0.00
+            payment:
+              type: string
+              enum: 
+                - cash
+                - credit card
+            status:
+              type: string
+              enum:
+                - new
+                - confirmed
+                - in process
+                - on way
+                - delivered
+            created:
+              type: string
+              format: date-time
+              example: "2019-04-20T14:47:42.506Z"
+            updated:
+              type: string
+              format: date-time  
+              example: "2019-04-20T14:47:42.506Z"   
+        content:
+          type: object
+          properties:
+            product_id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "string"
+            price:
+              type: number
+              format: double
+              example: 0.00  
+    orderInputs:
+      type: object
+      properties:
+        total:
+          type: number
+          format: double
+          example: 350
+        payment:
+          type: string
+          enum: 
+            - cash
+            - credit card
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: integer
+                example: 1
+              cuantity:
+                type: integer
+                example: 1  
